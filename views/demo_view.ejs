@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link rel="stylesheet" href="css/demo_view.css" />
+		<script src="js/opentok.min.js"></script>
+		<script src="jquery/jquery.min.js"></script>
+	</head>
+	<body>
+		<h3>HLS Stream to Experience Composer Demo</h3>
+		<div>
+			Once the session is loaded, just press Start Demo. An experience composer that points to an HLS Client will join the session.
+			You can change the HLS stream using the text box below.
+			<br><br>
+		</div>
+
+			Put your HLS stream URL here<br /><input
+				type="text"
+				style="margin: 10px; width: 80%;"
+				id="hls_stream"
+				value="Starting Session"
+				readonly
+			/>
+			<button
+				id="changeUrl"
+				disabled="true" onclick="change_hls_url()">Change Stream</button><br /><br />
+			<button
+				id="toggleComposer"
+        disabled="true"
+				style="color: white; padding: 5px; background-color: black; visibility: hidden;"
+				onclick="toggleComposer()"
+			>
+				Start Demo</button
+			><br /><br />
+			<div id="exp_comp_data"></div>
+		</div>
+
+		<div>
+			<div id="subscriber"></div>
+			<div>
+				<h3>Here are some HLS streams you can use to test:</h3>
+					<li>https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8</li>
+					<li>https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8</li>
+					<li>http://qthttp.apple.com.edgesuite.net/1010qwoeiuryfg/sl.m3u8</li>
+			</div>
+			<div id="publisher"></div>
+		</div>
+
+		<script src="js/demo_view.js" type="text/javascript"></script>
+	</body>
+</html>
+<script>
+	var exp_comp_id = '';
+	var composer_on = false;
+	$(async function () {
+		startSession('<%=sessionId%>', '<%=token%>', '<%=apiKey%>').then(function (result) {
+			console.log('>>>>' + result);
+			$('#link').val(window.location.protocol+"//" + window.location.hostname+'/<%=sessionId%>/join');
+			$('#token').val(window.location.protocol+"//" + window.location.hostname+'/<%=sessionId%>/token');
+      $('#toggleComposer').prop("disabled",false);
+			$('#toggleComposer').css("visibility","visible");
+			$('#hls_stream').val("<%=default_source%>");
+			$('#hls_stream').prop("readonly", false);
+
+		});
+	});
+
+
+  function change_hls_url(){
+    var el =  $('#hls_stream');
+    $.post('./change_source',{
+				source: el.val(),
+				type: "application/x-mpegURL"
+			}).done(function (msg) {
+				$('#stream_name').html(
+					$('#hls_stream').val()
+				);
+			});
+  }
+
+	function toggleComposer() {
+    console.log("clicked")
+		var button = $('#toggleComposer');
+
+		if (composer_on == false) {
+			button.text('Preparing Experience Composer');
+			button.css('background-color', 'Orange');
+			$.post('./start_composer/<%=sessionId%>?source='+ $('#hls_stream').val(),{
+				apikey: '<%=apiKey%>',
+				secret: '<%=apiSecret%>'
+			}).done(function (msg) {
+				composer_on = true;
+				console.log(msg);
+				$('#hls_stream').prop("readonly", false);
+				$('#changeUrl').prop("disabled",false);
+				button.text('Stop Experience Composer');
+				button.css('background-color', 'red');
+				$('#exp_comp_data').html(
+					'<li>Experience Composer ID: ' + msg['id'] + '<li>HLS Stream: <span id=stream_name>' + $('#hls_stream').val() + "</span>"
+				);
+				exp_comp_id = msg['id'];
+			});
+		} else {
+			button.text('Stopping Experience Composer');
+			button.css('background-color', 'Orange');
+			$.post('./stop_composer/' + exp_comp_id,{
+				apikey: '<%=apiKey%>',
+				secret: '<%=apiSecret%>',
+			}).done(function (msg) {
+				composer_on = false;
+				$('#hls_stream').prop("readonly", true);
+				$('#changeUrl').prop("disabled",true);
+				button.text('Start Experience Composer HLS Stream');
+				button.css('background-color', 'black');
+				console.log(msg);
+			});
+		}
+	}
+</script>

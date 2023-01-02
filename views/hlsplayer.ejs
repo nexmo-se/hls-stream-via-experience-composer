@@ -1,0 +1,55 @@
+<head title="HLS Cient"></head>
+<link rel="stylesheet" href="./videojs/video-js.min.css" type="text/css" />
+<style>
+  .center-screen-black {
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    min-height: 100vh;
+  }
+  
+</style>
+<body style="background: black;">
+<div class=center-screen-black >
+  <video id=vid-player  class="video-js vjs-16-9 vjs-default-skin"  data-setup='{"fluid": true}' controls>
+    <source
+      id="vid-source"
+      src="<%=vid_source%>"
+      type="application/x-mpegURL">
+  </video>
+</div>
+</body>
+<script src="./videojs/video.min.js"></script>
+<script src="./videojs-hls/videojs-contrib-hls.min.js"></script>
+<script src="./socket.io/socket.io.js"></script>
+
+<script>
+  var path_name = window.location.pathname
+  path_name = path_name.replace("hlsplayer","socket.io")
+  var socket = io('', {path: path_name});
+  var player = videojs('vid-player');
+  player.play();
+  socket.on('changesource', function(data){
+    playVideo(data.source, data.type)
+  });
+
+  function playVideo(videoSource, type) {
+    // var videoElm = document.getElementById('vid-player');
+    // var videoSourceElm = document.getElementById('vid-source'); 
+    if (!player.paused) {
+          player.pause();
+      }
+      
+    // videoSourceElm.src = videoSource;
+    // videoSourceElm.type = type;
+  
+    player.src(videoSource);
+    //player.type(type)
+    player.play();
+    
+  }
+  
+  
+</script>
